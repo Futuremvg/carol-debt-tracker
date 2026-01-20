@@ -16,7 +16,8 @@ interface CreditItem {
 
 interface CreditConfig {
   initialBalance: number;
-  monthlyInterestRate: number;
+  interestRate: number;
+  interestType: "monthly" | "annual";
 }
 
 const LOCAL_KEY = "credit-line-items";
@@ -34,9 +35,9 @@ function getStoredItems(): CreditItem[] {
 function getStoredConfig(): CreditConfig {
   try {
     const data = localStorage.getItem(CONFIG_KEY);
-    return data ? JSON.parse(data) : { initialBalance: 0, monthlyInterestRate: 21 };
+    return data ? JSON.parse(data) : { initialBalance: 0, interestRate: 21, interestType: "annual" };
   } catch {
-    return { initialBalance: 0, monthlyInterestRate: 21 };
+    return { initialBalance: 0, interestRate: 21, interestType: "annual" };
   }
 }
 
@@ -61,7 +62,8 @@ const CreditLine: React.FC = () => {
   const [type, setType] = React.useState<"expense" | "payment">("expense");
 
   const [tempInitialBalance, setTempInitialBalance] = React.useState(String(config.initialBalance));
-  const [tempInterestRate, setTempInterestRate] = React.useState(String(config.monthlyInterestRate));
+  const [tempInterestRate, setTempInterestRate] = React.useState(String(config.interestRate));
+  const [tempInterestType, setTempInterestType] = React.useState<"monthly" | "annual">(config.interestType);
 
   React.useEffect(() => {
     saveItems(items);
@@ -91,7 +93,8 @@ const CreditLine: React.FC = () => {
 
   const openConfig = () => {
     setTempInitialBalance(String(config.initialBalance));
-    setTempInterestRate(String(config.monthlyInterestRate));
+    setTempInterestRate(String(config.interestRate));
+    setTempInterestType(config.interestType);
     setConfigDialogOpen(true);
   };
 
@@ -117,7 +120,8 @@ const CreditLine: React.FC = () => {
   const handleSaveConfig = () => {
     setConfig({
       initialBalance: parseFloat(tempInitialBalance) || 0,
-      monthlyInterestRate: parseFloat(tempInterestRate) || 0,
+      interestRate: parseFloat(tempInterestRate) || 0,
+      interestType: tempInterestType,
     });
     setConfigDialogOpen(false);
   };
@@ -129,7 +133,9 @@ const CreditLine: React.FC = () => {
   const totalExpenses = items.filter(i => i.type === "expense").reduce((acc, i) => acc + i.value, 0);
   const totalPayments = items.filter(i => i.type === "payment").reduce((acc, i) => acc + i.value, 0);
   const currentBalance = config.initialBalance + totalExpenses - totalPayments;
-  const monthlyInterest = (currentBalance * config.monthlyInterestRate) / 100 / 12;
+  const monthlyInterest = config.interestType === "monthly" 
+    ? (currentBalance * config.interestRate) / 100 
+    : (currentBalance * config.interestRate) / 100 / 12;
 
   const formatCurrency = (val: number) =>
     `CAD $${val.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -303,17 +309,35 @@ const CreditLine: React.FC = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">Taxa de Juros Anual (%)</label>
+              <label className="text-sm font-medium">Tipo de Juros</label>
+              <Select value={tempInterestType} onValueChange={(v) => setTempInterestType(v as "monthly" | "annual")}>
+                <SelectTrigger className="rounded-xl">
+                  <SelectValue placeholder="Tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Mensal</SelectItem>
+                  <SelectItem value="annual">Anual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Taxa de Juros {tempInterestType === "monthly" ? "Mensal" : "Anual"} (%)
+              </label>
               <Input
                 type="number"
-                placeholder="21"
+                placeholder={tempInterestType === "monthly" ? "1.75" : "21"}
                 value={tempInterestRate}
                 min={0}
                 step={0.1}
                 onChange={(e) => setTempInterestRate(e.target.value)}
                 className="rounded-xl"
               />
-              <p className="text-xs text-muted-foreground">RBC Prime + margem (típico: 19-22%)</p>
+              <p className="text-xs text-muted-foreground">
+                {tempInterestType === "monthly" 
+                  ? "Taxa mensal aplicada (ex: 1.75%/mês)" 
+                  : "RBC Prime + margem (típico: 19-22%/ano)"}
+              </p>
             </div>
           </div>
           <DialogFooter>
