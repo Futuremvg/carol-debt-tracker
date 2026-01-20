@@ -2,9 +2,7 @@ import React from "react";
 import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Trash2, Pencil, Receipt, Calendar, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -35,8 +33,14 @@ function saveItems(items: FixedPayment[]) {
 
 const frequencyLabels: Record<Frequency, string> = {
   mensal: "Mensal",
-  quinzenal: "Quinzenal",
+  quinzenal: "Bi-weekly",
   semanal: "Semanal",
+};
+
+const frequencyIcons: Record<Frequency, React.ReactNode> = {
+  mensal: <Calendar size={14} />,
+  quinzenal: <RefreshCw size={14} />,
+  semanal: <RefreshCw size={14} />,
 };
 
 const PagamentosFixos: React.FC = () => {
@@ -107,70 +111,85 @@ const PagamentosFixos: React.FC = () => {
     return acc + i.value * factor;
   }, 0);
 
+  const formatCurrency = (val: number) =>
+    `CAD $${val.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
   return (
     <MainLayout>
       <div className="flex flex-col gap-6 animate-fade-in">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Pagamentos Fixos</h1>
-          <Button onClick={openNew} className="gap-2">
-            <Plus size={18} /> Adicionar
-          </Button>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">Pagamentos Fixos</h1>
+            <p className="text-sm text-muted-foreground">Despesas recorrentes</p>
+          </div>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Estimativa Mensal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <span className="text-3xl font-bold text-primary">
-              R$ {totalMensal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </span>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Pagamentos cadastrados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {items.length === 0 ? (
-              <p className="text-muted-foreground text-center py-6">Nenhum pagamento cadastrado.</p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Frequência</TableHead>
-                    <TableHead>Dia</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead className="w-24"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell>{frequencyLabels[item.frequency]}</TableCell>
-                      <TableCell>{item.dueDay}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        R$ {item.value.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell className="flex gap-2 justify-end">
-                        <Button size="icon" variant="ghost" onClick={() => openEdit(item)}>
-                          <Pencil size={16} />
-                        </Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDelete(item.id)}>
-                          <Trash2 size={16} className="text-destructive" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+
+        {/* Total Card */}
+        <div className="success-gradient rounded-3xl p-6 text-accent-foreground shadow-xl">
+          <div className="flex items-center gap-2 mb-4">
+            <Receipt size={20} className="opacity-80" />
+            <span className="text-sm font-medium opacity-90">Estimativa Mensal</span>
+          </div>
+          <div className="space-y-1">
+            <span className="text-4xl font-bold tracking-tight">{formatCurrency(totalMensal)}</span>
+            <p className="text-sm opacity-80">{items.length} pagamentos cadastrados</p>
+          </div>
+        </div>
+
+        {/* Payments List */}
+        <div className="glass-card rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between p-4 border-b border-border/50">
+            <h2 className="font-semibold">Pagamentos</h2>
+            <Button onClick={openNew} size="sm" className="rounded-xl gap-2">
+              <Plus size={16} /> Adicionar
+            </Button>
+          </div>
+          
+          {items.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground text-sm">Nenhum pagamento cadastrado</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/50">
+              {items.map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Receipt className="text-primary" size={18} />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{item.description}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                          {frequencyIcons[item.frequency]}
+                          {frequencyLabels[item.frequency]}
+                        </span>
+                        <span className="text-xs text-muted-foreground">Dia {item.dueDay}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">{formatCurrency(item.value)}</span>
+                    <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => openEdit(item)}>
+                        <Pencil size={14} />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => handleDelete(item.id)}>
+                        <Trash2 size={14} className="text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-3xl">
           <DialogHeader>
             <DialogTitle>{editingItem ? "Editar Pagamento" : "Novo Pagamento"}</DialogTitle>
           </DialogHeader>
@@ -179,22 +198,24 @@ const PagamentosFixos: React.FC = () => {
               placeholder="Descrição (ex: Seguro, Aluguel)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              className="rounded-xl"
             />
             <Input
               type="number"
-              placeholder="Valor (R$)"
+              placeholder="Valor (CAD)"
               value={value}
               min={0}
               step={0.01}
               onChange={(e) => setValue(e.target.value)}
+              className="rounded-xl"
             />
             <Select value={frequency} onValueChange={(v) => setFrequency(v as Frequency)}>
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl">
                 <SelectValue placeholder="Frequência" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="mensal">Mensal</SelectItem>
-                <SelectItem value="quinzenal">Quinzenal</SelectItem>
+                <SelectItem value="quinzenal">Bi-weekly (Quinzenal)</SelectItem>
                 <SelectItem value="semanal">Semanal</SelectItem>
               </SelectContent>
             </Select>
@@ -205,13 +226,14 @@ const PagamentosFixos: React.FC = () => {
               max={31}
               value={dueDay}
               onChange={(e) => setDueDay(e.target.value)}
+              className="rounded-xl"
             />
           </div>
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancelar</Button>
+              <Button variant="outline" className="rounded-xl">Cancelar</Button>
             </DialogClose>
-            <Button onClick={handleSave} disabled={!description || !value}>
+            <Button onClick={handleSave} disabled={!description || !value} className="rounded-xl">
               Salvar
             </Button>
           </DialogFooter>
