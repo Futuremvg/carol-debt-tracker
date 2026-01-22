@@ -142,94 +142,94 @@ const CreditLine: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="flex flex-col gap-6 animate-fade-in">
+      <div className="flex flex-col gap-8 animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">Credit Line</h1>
-            <p className="text-sm text-muted-foreground">RBC Bank</p>
+            <p className="text-xs text-muted-foreground font-light uppercase tracking-widest">RBC Bank</p>
+            <h1 className="text-2xl font-light tracking-tight">Credit Line</h1>
           </div>
-          <Button variant="outline" size="icon" className="rounded-xl" onClick={openConfig}>
-            <Percent size={18} />
+          <Button variant="ghost" size="icon" className="rounded-xl" onClick={openConfig}>
+            <Percent size={18} strokeWidth={1.5} />
           </Button>
         </div>
 
         {/* Balance Card */}
-        <div className="balance-gradient rounded-3xl p-6 text-primary-foreground shadow-xl">
-          <div className="flex items-center gap-2 mb-4">
-            <CreditCard size={20} className="opacity-80" />
-            <span className="text-sm font-medium opacity-90">Saldo Atual</span>
+        <div className="balance-gradient rounded-2xl p-6 text-primary-foreground shadow-lg">
+          <div className="flex items-center gap-2 mb-6">
+            <CreditCard size={18} strokeWidth={1.5} className="opacity-70" />
+            <span className="text-xs font-light uppercase tracking-widest opacity-80">Saldo Atual</span>
           </div>
-          <div className="space-y-1">
-            <span className="text-4xl font-bold tracking-tight">{formatCurrency(currentBalance)}</span>
-            <p className="text-sm opacity-80">Juros estimado/mês: {formatCurrency(monthlyInterest)}</p>
+          <div className="space-y-2">
+            <span className="text-4xl font-extralight tracking-tight">{formatCurrency(currentBalance)}</span>
+            <p className="text-xs font-light opacity-70 tracking-wide">Juros estimado/mês: {formatCurrency(monthlyInterest)}</p>
           </div>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="glass-card rounded-2xl p-4 space-y-2">
+          <div className="glass-card rounded-2xl p-5 space-y-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
-                <TrendingDown className="text-destructive" size={16} />
+              <div className="w-8 h-8 rounded-lg bg-destructive/8 flex items-center justify-center">
+                <TrendingDown className="text-destructive" size={16} strokeWidth={1.5} />
               </div>
-              <span className="text-xs text-muted-foreground">Gastos</span>
+              <span className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">Gastos</span>
             </div>
-            <p className="text-lg font-bold">{formatCurrency(totalExpenses)}</p>
+            <p className="text-lg font-light tracking-tight">{formatCurrency(totalExpenses)}</p>
           </div>
-          <div className="glass-card rounded-2xl p-4 space-y-2">
+          <div className="glass-card rounded-2xl p-5 space-y-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
-                <DollarSign className="text-accent" size={16} />
+              <div className="w-8 h-8 rounded-lg bg-accent/8 flex items-center justify-center">
+                <DollarSign className="text-accent" size={16} strokeWidth={1.5} />
               </div>
-              <span className="text-xs text-muted-foreground">Pagamentos</span>
+              <span className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">Pagamentos</span>
             </div>
-            <p className="text-lg font-bold">{formatCurrency(totalPayments)}</p>
+            <p className="text-lg font-light tracking-tight">{formatCurrency(totalPayments)}</p>
           </div>
         </div>
 
         {/* Transactions */}
         <div className="glass-card rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-border/50">
-            <h2 className="font-semibold">Transações</h2>
-            <Button onClick={openNew} size="sm" className="rounded-xl gap-2">
-              <Plus size={16} /> Adicionar
+          <div className="flex items-center justify-between p-5 border-b border-border/30">
+            <h2 className="text-sm font-light tracking-wide">Transações</h2>
+            <Button onClick={openNew} size="sm" variant="ghost" className="rounded-xl gap-2 text-xs font-light">
+              <Plus size={14} strokeWidth={1.5} /> Adicionar
             </Button>
           </div>
           
           {items.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-muted-foreground text-sm">Nenhuma transação registrada</p>
+            <div className="p-10 text-center">
+              <p className="text-muted-foreground text-xs font-light">Nenhuma transação registrada</p>
             </div>
           ) : (
-            <div className="divide-y divide-border/50">
+            <div className="divide-y divide-border/30">
               {items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                <div key={item.id} className="flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      item.type === "payment" ? "bg-accent/10" : "bg-destructive/10"
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                      item.type === "payment" ? "bg-accent/8" : "bg-destructive/8"
                     }`}>
                       {item.type === "payment" ? (
-                        <DollarSign className="text-accent" size={18} />
+                        <DollarSign className="text-accent" size={16} strokeWidth={1.5} />
                       ) : (
-                        <CreditCard className="text-destructive" size={18} />
+                        <CreditCard className="text-destructive" size={16} strokeWidth={1.5} />
                       )}
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{item.description}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(item.date).toLocaleDateString("pt-BR")}</p>
+                      <p className="text-sm font-light">{item.description}</p>
+                      <p className="text-[10px] text-muted-foreground font-light tracking-wide">{new Date(item.date).toLocaleDateString("pt-BR")}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`font-semibold ${item.type === "payment" ? "text-accent" : "text-foreground"}`}>
+                  <div className="flex items-center gap-3">
+                    <span className={`font-light ${item.type === "payment" ? "text-accent" : "text-foreground"}`}>
                       {item.type === "payment" ? "-" : "+"}{formatCurrency(item.value)}
                     </span>
-                    <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => openEdit(item)}>
-                        <Pencil size={14} />
+                    <div className="flex gap-0.5">
+                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg" onClick={() => openEdit(item)}>
+                        <Pencil size={12} strokeWidth={1.5} />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => handleDelete(item.id)}>
-                        <Trash2 size={14} className="text-destructive" />
+                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg" onClick={() => handleDelete(item.id)}>
+                        <Trash2 size={12} strokeWidth={1.5} className="text-destructive" />
                       </Button>
                     </div>
                   </div>
