@@ -116,67 +116,67 @@ const PagamentosFixos: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="flex flex-col gap-6 animate-fade-in">
+      <div className="flex flex-col gap-8 animate-fade-in">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">Pagamentos Fixos</h1>
-            <p className="text-sm text-muted-foreground">Despesas recorrentes</p>
+            <p className="text-xs text-muted-foreground font-light uppercase tracking-widest">Despesas recorrentes</p>
+            <h1 className="text-2xl font-light tracking-tight">Pagamentos Fixos</h1>
           </div>
         </div>
 
         {/* Total Card */}
-        <div className="success-gradient rounded-3xl p-6 text-accent-foreground shadow-xl">
-          <div className="flex items-center gap-2 mb-4">
-            <Receipt size={20} className="opacity-80" />
-            <span className="text-sm font-medium opacity-90">Estimativa Mensal</span>
+        <div className="success-gradient rounded-2xl p-6 text-accent-foreground shadow-lg">
+          <div className="flex items-center gap-2 mb-6">
+            <Receipt size={18} strokeWidth={1.5} className="opacity-70" />
+            <span className="text-xs font-light uppercase tracking-widest opacity-80">Estimativa Mensal</span>
           </div>
-          <div className="space-y-1">
-            <span className="text-4xl font-bold tracking-tight">{formatCurrency(totalMensal)}</span>
-            <p className="text-sm opacity-80">{items.length} pagamentos cadastrados</p>
+          <div className="space-y-2">
+            <span className="text-4xl font-extralight tracking-tight">{formatCurrency(totalMensal)}</span>
+            <p className="text-xs font-light opacity-70 tracking-wide">{items.length} pagamentos cadastrados</p>
           </div>
         </div>
 
         {/* Payments List */}
         <div className="glass-card rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-border/50">
-            <h2 className="font-semibold">Pagamentos</h2>
-            <Button onClick={openNew} size="sm" className="rounded-xl gap-2">
-              <Plus size={16} /> Adicionar
+          <div className="flex items-center justify-between p-5 border-b border-border/30">
+            <h2 className="text-sm font-light tracking-wide">Pagamentos</h2>
+            <Button onClick={openNew} size="sm" variant="ghost" className="rounded-xl gap-2 text-xs font-light">
+              <Plus size={14} strokeWidth={1.5} /> Adicionar
             </Button>
           </div>
           
           {items.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-muted-foreground text-sm">Nenhum pagamento cadastrado</p>
+            <div className="p-10 text-center">
+              <p className="text-muted-foreground text-xs font-light">Nenhum pagamento cadastrado</p>
             </div>
           ) : (
-            <div className="divide-y divide-border/50">
+            <div className="divide-y divide-border/30">
               {items.map((item) => (
-                <div key={item.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                <div key={item.id} className="flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Receipt className="text-primary" size={18} />
+                    <div className="w-9 h-9 rounded-xl bg-primary/8 flex items-center justify-center">
+                      <Receipt className="text-primary" size={16} strokeWidth={1.5} />
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{item.description}</p>
+                      <p className="text-sm font-light">{item.description}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground font-light uppercase tracking-wider">
                           {frequencyIcons[item.frequency]}
                           {frequencyLabels[item.frequency]}
                         </span>
-                        <span className="text-xs text-muted-foreground">Dia {item.dueDay}</span>
+                        <span className="text-[10px] text-muted-foreground font-light">Dia {item.dueDay}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{formatCurrency(item.value)}</span>
-                    <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => openEdit(item)}>
-                        <Pencil size={14} />
+                  <div className="flex items-center gap-3">
+                    <span className="font-light">{formatCurrency(item.value)}</span>
+                    <div className="flex gap-0.5">
+                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg" onClick={() => openEdit(item)}>
+                        <Pencil size={12} strokeWidth={1.5} />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => handleDelete(item.id)}>
-                        <Trash2 size={14} className="text-destructive" />
+                      <Button size="icon" variant="ghost" className="h-7 w-7 rounded-lg" onClick={() => handleDelete(item.id)}>
+                        <Trash2 size={12} strokeWidth={1.5} className="text-destructive" />
                       </Button>
                     </div>
                   </div>

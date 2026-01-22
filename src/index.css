@@ -1,86 +1,88 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 20% 10%;
+    --background: 0 0% 99%;
+    --foreground: 220 15% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --card-foreground: 220 15% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    --popover-foreground: 220 15% 15%;
 
-    --primary: 220 90% 56%;
+    --primary: 220 70% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 20% 10%;
+    --secondary: 220 10% 96%;
+    --secondary-foreground: 220 15% 25%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 220 10% 96%;
+    --muted-foreground: 220 8% 55%;
 
-    --accent: 160 84% 39%;
+    --accent: 160 50% 42%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 60% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 220 90% 56%;
+    --border: 220 10% 92%;
+    --input: 220 10% 92%;
+    --ring: 220 70% 50%;
 
     --radius: 1rem;
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 10% 30%;
-    --sidebar-primary: 220 90% 56%;
+    --sidebar-foreground: 220 8% 40%;
+    --sidebar-primary: 220 70% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 20% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 220 90% 56%;
+    --sidebar-accent: 220 10% 96%;
+    --sidebar-accent-foreground: 220 15% 15%;
+    --sidebar-border: 220 10% 92%;
+    --sidebar-ring: 220 70% 50%;
   }
 
   .dark {
-    --background: 224 30% 8%;
-    --foreground: 210 20% 98%;
+    --background: 225 25% 6%;
+    --foreground: 0 0% 95%;
 
-    --card: 224 25% 12%;
-    --card-foreground: 210 20% 98%;
+    --card: 225 20% 9%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 224 25% 12%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 225 20% 9%;
+    --popover-foreground: 0 0% 95%;
 
-    --primary: 220 90% 60%;
+    --primary: 220 70% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 224 20% 18%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 225 15% 14%;
+    --secondary-foreground: 0 0% 90%;
 
-    --muted: 224 20% 18%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 225 15% 14%;
+    --muted-foreground: 220 8% 55%;
 
-    --accent: 160 84% 45%;
+    --accent: 160 50% 48%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 60% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 224 20% 20%;
-    --input: 224 20% 20%;
-    --ring: 220 90% 60%;
+    --border: 225 15% 15%;
+    --input: 225 15% 15%;
+    --ring: 220 70% 55%;
 
-    --sidebar-background: 224 25% 10%;
-    --sidebar-foreground: 210 15% 80%;
-    --sidebar-primary: 220 90% 60%;
+    --sidebar-background: 225 20% 8%;
+    --sidebar-foreground: 0 0% 75%;
+    --sidebar-primary: 220 70% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 224 20% 16%;
-    --sidebar-accent-foreground: 210 20% 98%;
-    --sidebar-border: 224 20% 18%;
-    --sidebar-ring: 220 90% 60%;
+    --sidebar-accent: 225 15% 12%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 225 15% 13%;
+    --sidebar-ring: 220 70% 55%;
   }
 }
 
@@ -91,19 +93,30 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 }
 
 @layer utilities {
   .glass-card {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg;
+    @apply bg-card/60 backdrop-blur-2xl border border-border/30 shadow-sm;
   }
   
   .balance-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(220 90% 45%) 100%);
+    background: linear-gradient(145deg, hsl(220 70% 50%) 0%, hsl(220 80% 40%) 100%);
   }
   
   .success-gradient {
-    background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(160 84% 30%) 100%);
+    background: linear-gradient(145deg, hsl(160 50% 42%) 0%, hsl(160 60% 32%) 100%);
+  }
+  
+  .text-thin {
+    font-weight: 300;
+    letter-spacing: 0.01em;
+  }
+  
+  .text-ultrathin {
+    font-weight: 200;
+    letter-spacing: 0.02em;
   }
 }
