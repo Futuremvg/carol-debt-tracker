@@ -1,6 +1,7 @@
 import React from "react";
 import MainLayout from "@/components/MainLayout";
-import { ArrowDownRight, ArrowUpRight, TrendingUp } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, TrendingUp, Bell, AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 interface CreditConfig {
   initialBalance: number;
@@ -22,6 +23,12 @@ interface FixedPayment {
   value: number;
   frequency: "mensal" | "quinzenal" | "semanal";
   dueDay: number;
+}
+
+interface PaymentAlert {
+  payment: FixedPayment;
+  daysUntilDue: number;
+  status: "overdue" | "today" | "upcoming" | "safe";
 }
 
 function getCreditData() {
@@ -53,14 +60,44 @@ function getFixedPaymentsData() {
       return acc + i.value * factor;
     }, 0);
     
-    // Find first two payments for display
     const firstPayment = items[0];
     const secondPayment = items[1];
     
-    return { totalMensal, firstPayment, secondPayment };
+    return { totalMensal, firstPayment, secondPayment, items };
   } catch {
-    return { totalMensal: 0, firstPayment: undefined, secondPayment: undefined };
+    return { totalMensal: 0, firstPayment: undefined, secondPayment: undefined, items: [] };
   }
+}
+
+function calculatePaymentAlerts(payments: FixedPayment[]): PaymentAlert[] {
+  const today = new Date();
+  const currentDay = today.getDate();
+  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  
+  return payments.map(payment => {
+    let daysUntilDue: number;
+    
+    if (payment.dueDay >= currentDay) {
+      daysUntilDue = payment.dueDay - currentDay;
+    } else {
+      daysUntilDue = (daysInMonth - currentDay) + payment.dueDay;
+    }
+    
+    let status: PaymentAlert["status"];
+    if (daysUntilDue === 0) {
+      status = "today";
+    } else if (daysUntilDue <= 3) {
+      status = "upcoming";
+    } else if (daysUntilDue > daysInMonth - 3 && payment.dueDay < currentDay) {
+      status = "overdue";
+      daysUntilDue = currentDay - payment.dueDay;
+    } else {
+      status = "safe";
+    }
+    
+    return { payment, daysUntilDue, status };
+  }).filter(alert => alert.status !== "safe")
+    .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
 }
 
 const frequencyLabels: Record<string, string> = {
@@ -69,21 +106,65 @@ const frequencyLabels: Record<string, string> = {
   semanal: "Semanal",
 };
 
+const containerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.05
+    }
+  }
+};
+
+const itemVariants: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 15
+    }
+  }
+};
+
+const alertVariants: Variants = {
+  hidden: { opacity: 0, x: -20, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 120,
+      damping: 14
+    }
+  },
+  exit: {
+    opacity: 0,
+    x: 20,
+    scale: 0.95,
+    transition: { duration: 0.2 }
+  }
+};
+
 const Index = () => {
   const [creditData, setCreditData] = React.useState(getCreditData);
   const [fixedData, setFixedData] = React.useState(getFixedPaymentsData);
+  const [alerts, setAlerts] = React.useState<PaymentAlert[]>([]);
 
-  // Refresh data when component mounts or window focuses
   React.useEffect(() => {
     const refresh = () => {
       setCreditData(getCreditData());
-      setFixedData(getFixedPaymentsData());
+      const data = getFixedPaymentsData();
+      setFixedData(data);
+      setAlerts(calculatePaymentAlerts(data.items));
     };
     
     window.addEventListener("focus", refresh);
     window.addEventListener("storage", refresh);
-    
-    // Also refresh on mount
     refresh();
     
     return () => {
@@ -96,37 +177,187 @@ const Index = () => {
     `CAD $${val.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const totalEstimado = fixedData.totalMensal + creditData.monthlyInterest;
-
   const currentMonth = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  const getAlertIcon = (status: PaymentAlert["status"]) => {
+    switch (status) {
+      case "overdue":
+        return <AlertCircle size={16} strokeWidth={1.5} />;
+      case "today":
+        return <Bell size={16} strokeWidth={1.5} />;
+      case "upcoming":
+        return <Clock size={16} strokeWidth={1.5} />;
+      default:
+        return <CheckCircle size={16} strokeWidth={1.5} />;
+    }
+  };
+
+  const getAlertStyles = (status: PaymentAlert["status"]) => {
+    switch (status) {
+      case "overdue":
+        return {
+          bg: "bg-destructive/10",
+          border: "border-destructive/20",
+          icon: "text-destructive",
+          text: "text-destructive"
+        };
+      case "today":
+        return {
+          bg: "bg-primary/10",
+          border: "border-primary/20",
+          icon: "text-primary",
+          text: "text-primary"
+        };
+      case "upcoming":
+        return {
+          bg: "bg-muted",
+          border: "border-border",
+          icon: "text-muted-foreground",
+          text: "text-muted-foreground"
+        };
+      default:
+        return {
+          bg: "bg-accent/10",
+          border: "border-accent/20",
+          icon: "text-accent",
+          text: "text-accent"
+        };
+    }
+  };
+
+  const getAlertMessage = (alert: PaymentAlert) => {
+    switch (alert.status) {
+      case "overdue":
+        return `Vencido há ${alert.daysUntilDue} dia${alert.daysUntilDue > 1 ? "s" : ""}`;
+      case "today":
+        return "Vence hoje";
+      case "upcoming":
+        return `Vence em ${alert.daysUntilDue} dia${alert.daysUntilDue > 1 ? "s" : ""}`;
+      default:
+        return "Em dia";
+    }
+  };
 
   return (
     <MainLayout>
-      <div className="flex flex-col gap-8 animate-fade-in">
+      <motion.div 
+        className="flex flex-col gap-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {/* Greeting */}
-        <div className="space-y-1">
+        <motion.div className="space-y-1" variants={itemVariants}>
           <p className="text-muted-foreground text-xs text-ultrathin uppercase tracking-widest">Bom dia</p>
           <h1 className="text-2xl font-light tracking-tight">Dashboard</h1>
-        </div>
+        </motion.div>
+
+        {/* Alerts Section */}
+        <AnimatePresence mode="popLayout">
+          {alerts.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-3"
+            >
+              <div className="flex items-center gap-2">
+                <motion.div
+                  animate={{ scale: [1, 1.1, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Bell size={14} strokeWidth={1.5} className="text-primary" />
+                </motion.div>
+                <span className="text-xs font-light uppercase tracking-widest text-muted-foreground">
+                  Alertas de Vencimento
+                </span>
+              </div>
+              
+              <div className="space-y-2">
+                {alerts.map((alert, index) => {
+                  const styles = getAlertStyles(alert.status);
+                  return (
+                    <motion.div
+                      key={alert.payment.id}
+                      variants={alertVariants}
+                      initial="hidden"
+                      animate="visible"
+                      exit="exit"
+                      custom={index}
+                      className={`glass-card rounded-xl p-4 border ${styles.border} ${styles.bg}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <motion.div 
+                            className={`w-8 h-8 rounded-lg ${styles.bg} flex items-center justify-center ${styles.icon}`}
+                            animate={alert.status === "overdue" || alert.status === "today" 
+                              ? { scale: [1, 1.05, 1] } 
+                              : undefined
+                            }
+                            transition={{ duration: 2, repeat: Infinity }}
+                          >
+                            {getAlertIcon(alert.status)}
+                          </motion.div>
+                          <div>
+                            <p className="text-sm font-light">{alert.payment.description}</p>
+                            <p className={`text-[10px] font-light uppercase tracking-wider ${styles.text}`}>
+                              {getAlertMessage(alert)}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="font-light text-sm">{formatCurrency(alert.payment.value)}</span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Balance Card */}
-        <div className="balance-gradient rounded-2xl p-6 text-primary-foreground shadow-lg">
+        <motion.div 
+          variants={itemVariants}
+          className="balance-gradient rounded-2xl p-6 text-primary-foreground shadow-lg"
+          whileHover={{ scale: 1.01 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
           <div className="flex items-center justify-between mb-6">
             <span className="text-xs font-light uppercase tracking-widest opacity-80">Credit Line Balance</span>
-            <TrendingUp size={18} strokeWidth={1.5} className="opacity-70" />
+            <motion.div
+              animate={{ rotate: [0, 5, -5, 0] }}
+              transition={{ duration: 4, repeat: Infinity }}
+            >
+              <TrendingUp size={18} strokeWidth={1.5} className="opacity-70" />
+            </motion.div>
           </div>
           <div className="space-y-2">
-            <span className="text-4xl font-extralight tracking-tight">{formatCurrency(creditData.currentBalance)}</span>
+            <motion.span 
+              className="text-4xl font-extralight tracking-tight block"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              {formatCurrency(creditData.currentBalance)}
+            </motion.span>
             <p className="text-xs font-light opacity-70 tracking-wide">Dívida total em aberto</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="glass-card rounded-2xl p-5 space-y-4">
+        <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
+          <motion.div 
+            className="glass-card rounded-2xl p-5 space-y-4"
+            whileHover={{ y: -2 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-destructive/8 flex items-center justify-center">
+              <motion.div 
+                className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center"
+                whileHover={{ scale: 1.1 }}
+              >
                 <ArrowUpRight className="text-destructive" size={18} strokeWidth={1.5} />
-              </div>
+              </motion.div>
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground font-light tracking-wide">
@@ -139,13 +370,20 @@ const Index = () => {
                 {fixedData.firstPayment ? frequencyLabels[fixedData.firstPayment.frequency] : "—"}
               </p>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="glass-card rounded-2xl p-5 space-y-4">
+          <motion.div 
+            className="glass-card rounded-2xl p-5 space-y-4"
+            whileHover={{ y: -2 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+          >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-accent/8 flex items-center justify-center">
+              <motion.div 
+                className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center"
+                whileHover={{ scale: 1.1 }}
+              >
                 <ArrowDownRight className="text-accent" size={18} strokeWidth={1.5} />
-              </div>
+              </motion.div>
             </div>
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground font-light tracking-wide">
@@ -158,41 +396,80 @@ const Index = () => {
                 {fixedData.secondPayment ? frequencyLabels[fixedData.secondPayment.frequency] : "—"}
               </p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {/* Monthly Overview */}
-        <div className="glass-card rounded-2xl p-6 space-y-5">
+        <motion.div 
+          variants={itemVariants}
+          className="glass-card rounded-2xl p-6 space-y-5"
+          whileHover={{ scale: 1.005 }}
+          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        >
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-light tracking-wide">Resumo Mensal</h2>
             <span className="text-[10px] text-muted-foreground font-light uppercase tracking-widest capitalize">{currentMonth}</span>
           </div>
           
           <div className="space-y-0">
-            <div className="flex items-center justify-between py-4 border-b border-border/40">
+            <motion.div 
+              className="flex items-center justify-between py-4 border-b border-border/40"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
               <div className="flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                <motion.div 
+                  className="w-1.5 h-1.5 rounded-full bg-primary"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
                 <span className="text-sm font-light text-muted-foreground">Pagamentos Fixos</span>
               </div>
               <span className="font-light tracking-tight">{formatCurrency(fixedData.totalMensal)}</span>
-            </div>
-            <div className="flex items-center justify-between py-4 border-b border-border/40">
+            </motion.div>
+            <motion.div 
+              className="flex items-center justify-between py-4 border-b border-border/40"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
               <div className="flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-destructive" />
+                <motion.div 
+                  className="w-1.5 h-1.5 rounded-full bg-destructive"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
+                />
                 <span className="text-sm font-light text-muted-foreground">Juros Credit Line</span>
               </div>
               <span className="font-light tracking-tight">{formatCurrency(creditData.monthlyInterest)}</span>
-            </div>
-            <div className="flex items-center justify-between py-4">
+            </motion.div>
+            <motion.div 
+              className="flex items-center justify-between py-4"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
               <div className="flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-accent" />
+                <motion.div 
+                  className="w-1.5 h-1.5 rounded-full bg-accent"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, delay: 1 }}
+                />
                 <span className="text-sm font-light">Total Estimado</span>
               </div>
-              <span className="text-lg font-light tracking-tight">{formatCurrency(totalEstimado)}</span>
-            </div>
+              <motion.span 
+                className="text-lg font-light tracking-tight"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+              >
+                {formatCurrency(totalEstimado)}
+              </motion.span>
+            </motion.div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </MainLayout>
   );
 };
