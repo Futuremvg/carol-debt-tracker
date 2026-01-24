@@ -1,12 +1,13 @@
 import React from "react";
 import ThemeToggle from "./ThemeToggle";
 import { Link, useLocation } from "react-router-dom";
-import { CreditCard, Home, Receipt } from "lucide-react";
+import { CreditCard, Home, Receipt, Car } from "lucide-react";
 
 const navLinks = [
   { label: "Home", to: "/", icon: Home },
   { label: "Credit", to: "/credit-line", icon: CreditCard },
   { label: "Fixos", to: "/pagamentos-fixos", icon: Receipt },
+  { label: "Carro", to: "/vehicle-carol", icon: Car },
 ];
 
 const MainLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
