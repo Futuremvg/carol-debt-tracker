@@ -1,6 +1,6 @@
 import React from "react";
 import MainLayout from "@/components/MainLayout";
-import { ArrowDownRight, ArrowUpRight, TrendingUp, Bell, AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, TrendingUp, Bell, AlertCircle, Clock, CheckCircle, Sparkles } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 
 interface CreditConfig {
@@ -31,6 +31,18 @@ interface PaymentAlert {
   status: "overdue" | "today" | "upcoming" | "safe";
 }
 
+const motivationalMessages = [
+  "Cada pagamento te aproxima da liberdade financeira ✨",
+  "Pequenos passos, grandes conquistas 🚀",
+  "Você está no controle das suas finanças 💪",
+  "Disciplina hoje, prosperidade amanhã 🌟",
+  "Sua jornada financeira está evoluindo 📈",
+];
+
+function getRandomMotivationalMessage() {
+  return motivationalMessages[Math.floor(Math.random() * motivationalMessages.length)];
+}
+
 function getCreditData() {
   try {
     const config: CreditConfig = JSON.parse(localStorage.getItem("credit-line-config") || '{"initialBalance":0,"interestRate":21,"interestType":"annual"}');
@@ -42,10 +54,11 @@ function getCreditData() {
     const monthlyInterest = config.interestType === "monthly" 
       ? (currentBalance * config.interestRate) / 100 
       : (currentBalance * config.interestRate) / 100 / 12;
+    const annualRate = config.interestType === "annual" ? config.interestRate : config.interestRate * 12;
     
-    return { currentBalance, monthlyInterest };
+    return { currentBalance, monthlyInterest, annualRate };
   } catch {
-    return { currentBalance: 0, monthlyInterest: 0 };
+    return { currentBalance: 0, monthlyInterest: 0, annualRate: 0 };
   }
 }
 
@@ -154,6 +167,7 @@ const Index = () => {
   const [creditData, setCreditData] = React.useState(getCreditData);
   const [fixedData, setFixedData] = React.useState(getFixedPaymentsData);
   const [alerts, setAlerts] = React.useState<PaymentAlert[]>([]);
+  const [motivationalMessage] = React.useState(getRandomMotivationalMessage);
 
   React.useEffect(() => {
     const refresh = () => {
@@ -174,7 +188,7 @@ const Index = () => {
   }, []);
 
   const formatCurrency = (val: number) =>
-    `CAD $${val.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    `$${val.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const totalEstimado = fixedData.totalMensal + creditData.monthlyInterest;
   const currentMonth = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
@@ -241,15 +255,32 @@ const Index = () => {
   return (
     <MainLayout>
       <motion.div 
-        className="flex flex-col gap-8"
+        className="flex flex-col gap-6"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
+        {/* Motivational Message */}
+        <motion.div 
+          variants={itemVariants}
+          className="glass-card rounded-2xl p-4 border border-accent/20 bg-accent/5"
+        >
+          <div className="flex items-center gap-3">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="w-8 h-8 rounded-xl bg-accent/10 flex items-center justify-center"
+            >
+              <Sparkles size={16} strokeWidth={1.5} className="text-accent" />
+            </motion.div>
+            <p className="text-sm font-extralight tracking-wide text-foreground/90">{motivationalMessage}</p>
+          </div>
+        </motion.div>
+
         {/* Greeting */}
-        <motion.div className="space-y-1" variants={itemVariants}>
-          <p className="text-muted-foreground text-xs text-ultrathin uppercase tracking-widest">Bom dia</p>
-          <h1 className="text-2xl font-light tracking-tight">Dashboard</h1>
+        <motion.div className="space-y-0.5" variants={itemVariants}>
+          <p className="text-muted-foreground text-[10px] text-ultrathin uppercase tracking-[0.2em]">Bom dia</p>
+          <h1 className="text-xl font-extralight tracking-tight">Dashboard</h1>
         </motion.div>
 
         {/* Alerts Section */}
@@ -318,82 +349,86 @@ const Index = () => {
         {/* Main Balance Card */}
         <motion.div 
           variants={itemVariants}
-          className="balance-gradient rounded-2xl p-6 text-primary-foreground shadow-lg"
+          className="balance-gradient rounded-2xl p-5 text-primary-foreground shadow-lg"
           whileHover={{ scale: 1.01 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
-          <div className="flex items-center justify-between mb-6">
-            <span className="text-xs font-light uppercase tracking-widest opacity-80">Credit Line Balance</span>
+          <div className="flex items-center justify-between mb-5">
+            <span className="text-[10px] font-extralight uppercase tracking-[0.2em] opacity-80">Credit Line · RBC</span>
             <motion.div
               animate={{ rotate: [0, 5, -5, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
             >
-              <TrendingUp size={18} strokeWidth={1.5} className="opacity-70" />
+              <TrendingUp size={16} strokeWidth={1.5} className="opacity-60" />
             </motion.div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <motion.span 
-              className="text-4xl font-extralight tracking-tight block"
+              className="text-3xl font-extralight tracking-tight block"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
             >
               {formatCurrency(creditData.currentBalance)}
             </motion.span>
-            <p className="text-xs font-light opacity-70 tracking-wide">Dívida total em aberto</p>
+            <div className="flex items-center gap-4 text-[10px] font-extralight opacity-70 tracking-wide">
+              <span>Juros: {formatCurrency(creditData.monthlyInterest)}/mês</span>
+              <span className="opacity-50">·</span>
+              <span>{creditData.annualRate.toFixed(1)}% a.a.</span>
+            </div>
           </div>
         </motion.div>
 
         {/* Quick Stats */}
-        <motion.div variants={itemVariants} className="grid grid-cols-2 gap-4">
+        <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3">
           <motion.div 
-            className="glass-card rounded-2xl p-5 space-y-4"
+            className="glass-card rounded-2xl p-4 space-y-3"
             whileHover={{ y: -2 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <motion.div 
-                className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center"
+                className="w-7 h-7 rounded-lg bg-destructive/8 flex items-center justify-center"
                 whileHover={{ scale: 1.1 }}
               >
-                <ArrowUpRight className="text-destructive" size={18} strokeWidth={1.5} />
+                <ArrowUpRight className="text-destructive" size={14} strokeWidth={1.5} />
               </motion.div>
+              <p className="text-[10px] text-muted-foreground font-extralight uppercase tracking-wider truncate">
+                {fixedData.firstPayment?.description || "—"}
+              </p>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-light tracking-wide">
-                {fixedData.firstPayment?.description || "Pagamento 1"}
+            <div className="space-y-0.5">
+              <p className="text-lg font-extralight tracking-tight">
+                {fixedData.firstPayment ? formatCurrency(fixedData.firstPayment.value) : "—"}
               </p>
-              <p className="text-xl font-light tracking-tight">
-                {fixedData.firstPayment ? formatCurrency(fixedData.firstPayment.value) : formatCurrency(0)}
-              </p>
-              <p className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">
-                {fixedData.firstPayment ? frequencyLabels[fixedData.firstPayment.frequency] : "—"}
+              <p className="text-[9px] text-muted-foreground font-extralight uppercase tracking-[0.15em]">
+                {fixedData.firstPayment ? frequencyLabels[fixedData.firstPayment.frequency] : ""}
               </p>
             </div>
           </motion.div>
 
           <motion.div 
-            className="glass-card rounded-2xl p-5 space-y-4"
+            className="glass-card rounded-2xl p-4 space-y-3"
             whileHover={{ y: -2 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <motion.div 
-                className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center"
+                className="w-7 h-7 rounded-lg bg-accent/8 flex items-center justify-center"
                 whileHover={{ scale: 1.1 }}
               >
-                <ArrowDownRight className="text-accent" size={18} strokeWidth={1.5} />
+                <ArrowDownRight className="text-accent" size={14} strokeWidth={1.5} />
               </motion.div>
+              <p className="text-[10px] text-muted-foreground font-extralight uppercase tracking-wider truncate">
+                {fixedData.secondPayment?.description || "—"}
+              </p>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-light tracking-wide">
-                {fixedData.secondPayment?.description || "Pagamento 2"}
+            <div className="space-y-0.5">
+              <p className="text-lg font-extralight tracking-tight">
+                {fixedData.secondPayment ? formatCurrency(fixedData.secondPayment.value) : "—"}
               </p>
-              <p className="text-xl font-light tracking-tight">
-                {fixedData.secondPayment ? formatCurrency(fixedData.secondPayment.value) : formatCurrency(0)}
-              </p>
-              <p className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">
-                {fixedData.secondPayment ? frequencyLabels[fixedData.secondPayment.frequency] : "—"}
+              <p className="text-[9px] text-muted-foreground font-extralight uppercase tracking-[0.15em]">
+                {fixedData.secondPayment ? frequencyLabels[fixedData.secondPayment.frequency] : ""}
               </p>
             </div>
           </motion.div>
@@ -402,64 +437,64 @@ const Index = () => {
         {/* Monthly Overview */}
         <motion.div 
           variants={itemVariants}
-          className="glass-card rounded-2xl p-6 space-y-5"
+          className="glass-card rounded-2xl p-5 space-y-4"
           whileHover={{ scale: 1.005 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-light tracking-wide">Resumo Mensal</h2>
-            <span className="text-[10px] text-muted-foreground font-light uppercase tracking-widest capitalize">{currentMonth}</span>
+            <h2 className="text-xs font-extralight tracking-wide uppercase">Resumo Mensal</h2>
+            <span className="text-[9px] text-muted-foreground font-extralight uppercase tracking-[0.2em] capitalize">{currentMonth}</span>
           </div>
           
           <div className="space-y-0">
             <motion.div 
-              className="flex items-center justify-between py-4 border-b border-border/40"
+              className="flex items-center justify-between py-3 border-b border-border/30"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <motion.div 
-                  className="w-1.5 h-1.5 rounded-full bg-primary"
-                  animate={{ scale: [1, 1.2, 1] }}
+                  className="w-1 h-1 rounded-full bg-primary/70"
+                  animate={{ scale: [1, 1.3, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 />
-                <span className="text-sm font-light text-muted-foreground">Pagamentos Fixos</span>
+                <span className="text-xs font-extralight text-muted-foreground tracking-wide">Pagamentos Fixos</span>
               </div>
-              <span className="font-light tracking-tight">{formatCurrency(fixedData.totalMensal)}</span>
+              <span className="font-extralight text-sm tracking-tight">{formatCurrency(fixedData.totalMensal)}</span>
             </motion.div>
             <motion.div 
-              className="flex items-center justify-between py-4 border-b border-border/40"
+              className="flex items-center justify-between py-3 border-b border-border/30"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <motion.div 
-                  className="w-1.5 h-1.5 rounded-full bg-destructive"
-                  animate={{ scale: [1, 1.2, 1] }}
+                  className="w-1 h-1 rounded-full bg-destructive/70"
+                  animate={{ scale: [1, 1.3, 1] }}
                   transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
                 />
-                <span className="text-sm font-light text-muted-foreground">Juros Credit Line</span>
+                <span className="text-xs font-extralight text-muted-foreground tracking-wide">Juros Credit Line</span>
               </div>
-              <span className="font-light tracking-tight">{formatCurrency(creditData.monthlyInterest)}</span>
+              <span className="font-extralight text-sm tracking-tight">{formatCurrency(creditData.monthlyInterest)}</span>
             </motion.div>
             <motion.div 
-              className="flex items-center justify-between py-4"
+              className="flex items-center justify-between py-3"
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 <motion.div 
-                  className="w-1.5 h-1.5 rounded-full bg-accent"
-                  animate={{ scale: [1, 1.2, 1] }}
+                  className="w-1 h-1 rounded-full bg-accent/70"
+                  animate={{ scale: [1, 1.3, 1] }}
                   transition={{ duration: 2, repeat: Infinity, delay: 1 }}
                 />
-                <span className="text-sm font-light">Total Estimado</span>
+                <span className="text-xs font-extralight tracking-wide">Total Estimado</span>
               </div>
               <motion.span 
-                className="text-lg font-light tracking-tight"
+                className="text-base font-extralight tracking-tight"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
