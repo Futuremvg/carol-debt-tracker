@@ -1,7 +1,9 @@
 import React from "react";
 import MainLayout from "@/components/MainLayout";
-import { ArrowDownRight, ArrowUpRight, TrendingUp, Bell, AlertCircle, Clock, CheckCircle, Sparkles } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, TrendingUp, Bell, AlertCircle, Clock, CheckCircle, Sparkles, Car } from "lucide-react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { getStoredVehicleCarolData } from "@/hooks/useVehicleCarolData";
+import { calculateMonthlyEquivalentPayment } from "@/utils/carLoanCalculations";
 
 interface CreditConfig {
   initialBalance: number;
@@ -79,6 +81,26 @@ function getFixedPaymentsData() {
     return { totalMensal, firstPayment, secondPayment, items };
   } catch {
     return { totalMensal: 0, firstPayment: undefined, secondPayment: undefined, items: [] };
+  }
+}
+
+function getVehicleCarolData() {
+  try {
+    const data = getStoredVehicleCarolData();
+    const carMonthlyPayment = calculateMonthlyEquivalentPayment(data.carLoan);
+    const insuranceMonthly = data.insurancePaidByCarol.monthlyAmount;
+    const creditLineInterest = data.carolCreditLine.monthlyInterestCost;
+    const totalMonthlyImpact = carMonthlyPayment + insuranceMonthly + creditLineInterest;
+    
+    return { 
+      carMonthlyPayment, 
+      insuranceMonthly, 
+      creditLineInterest, 
+      totalMonthlyImpact,
+      carBalance: data.carLoan.balance
+    };
+  } catch {
+    return { carMonthlyPayment: 0, insuranceMonthly: 0, creditLineInterest: 0, totalMonthlyImpact: 0, carBalance: 0 };
   }
 }
 
@@ -166,6 +188,7 @@ const alertVariants: Variants = {
 const Index = () => {
   const [creditData, setCreditData] = React.useState(getCreditData);
   const [fixedData, setFixedData] = React.useState(getFixedPaymentsData);
+  const [vehicleData, setVehicleData] = React.useState(getVehicleCarolData);
   const [alerts, setAlerts] = React.useState<PaymentAlert[]>([]);
   const [motivationalMessage] = React.useState(getRandomMotivationalMessage);
 
@@ -175,6 +198,7 @@ const Index = () => {
       const data = getFixedPaymentsData();
       setFixedData(data);
       setAlerts(calculatePaymentAlerts(data.items));
+      setVehicleData(getVehicleCarolData());
     };
     
     window.addEventListener("focus", refresh);
@@ -190,7 +214,7 @@ const Index = () => {
   const formatCurrency = (val: number) =>
     `$${val.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  const totalEstimado = fixedData.totalMensal + creditData.monthlyInterest;
+  const totalEstimado = fixedData.totalMensal + creditData.monthlyInterest + vehicleData.totalMonthlyImpact;
   const currentMonth = new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   const getAlertIcon = (status: PaymentAlert["status"]) => {
@@ -479,6 +503,27 @@ const Index = () => {
               </div>
               <span className="font-extralight text-sm tracking-tight">{formatCurrency(creditData.monthlyInterest)}</span>
             </motion.div>
+            
+            {/* Vehicle & Carol Section */}
+            {vehicleData.totalMonthlyImpact > 0 && (
+              <motion.div 
+                className="flex items-center justify-between py-3 border-b border-border/30"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.45 }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <motion.div 
+                    className="w-1 h-1 rounded-full bg-accent/70"
+                    animate={{ scale: [1, 1.3, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, delay: 0.7 }}
+                  />
+                  <span className="text-xs font-extralight text-muted-foreground tracking-wide">Vehicle + Carol</span>
+                </div>
+                <span className="font-extralight text-sm tracking-tight">{formatCurrency(vehicleData.totalMonthlyImpact)}</span>
+              </motion.div>
+            )}
+            
             <motion.div 
               className="flex items-center justify-between py-3"
               initial={{ opacity: 0, x: -10 }}
@@ -487,7 +532,7 @@ const Index = () => {
             >
               <div className="flex items-center gap-2.5">
                 <motion.div 
-                  className="w-1 h-1 rounded-full bg-accent/70"
+                  className="w-1 h-1 rounded-full bg-foreground/70"
                   animate={{ scale: [1, 1.3, 1] }}
                   transition={{ duration: 2, repeat: Infinity, delay: 1 }}
                 />
