@@ -18,6 +18,8 @@ interface CreditConfig {
   initialBalance: number;
   interestRate: number;
   interestType: "monthly" | "annual";
+  interestMode: "percentage" | "fixed" | "both";
+  fixedInterestValue: number;
 }
 
 const LOCAL_KEY = "credit-line-items";
@@ -35,9 +37,22 @@ function getStoredItems(): CreditItem[] {
 function getStoredConfig(): CreditConfig {
   try {
     const data = localStorage.getItem(CONFIG_KEY);
-    return data ? JSON.parse(data) : { initialBalance: 0, interestRate: 21, interestType: "annual" };
+    const defaultConfig = { 
+      initialBalance: 0, 
+      interestRate: 21, 
+      interestType: "annual" as const, 
+      interestMode: "percentage" as const,
+      fixedInterestValue: 0
+    };
+    return data ? { ...defaultConfig, ...JSON.parse(data) } : defaultConfig;
   } catch {
-    return { initialBalance: 0, interestRate: 21, interestType: "annual" };
+    return { 
+      initialBalance: 0, 
+      interestRate: 21, 
+      interestType: "annual", 
+      interestMode: "percentage",
+      fixedInterestValue: 0
+    };
   }
 }
 
@@ -64,6 +79,8 @@ const CreditLine: React.FC = () => {
   const [tempInitialBalance, setTempInitialBalance] = React.useState(String(config.initialBalance));
   const [tempInterestRate, setTempInterestRate] = React.useState(String(config.interestRate));
   const [tempInterestType, setTempInterestType] = React.useState<"monthly" | "annual">(config.interestType);
+  const [tempInterestMode, setTempInterestMode] = React.useState<"percentage" | "fixed" | "both">(config.interestMode);
+  const [tempFixedValue, setTempFixedValue] = React.useState(String(config.fixedInterestValue));
 
   React.useEffect(() => {
     saveItems(items);
@@ -95,6 +112,8 @@ const CreditLine: React.FC = () => {
     setTempInitialBalance(String(config.initialBalance));
     setTempInterestRate(String(config.interestRate));
     setTempInterestType(config.interestType);
+    setTempInterestMode(config.interestMode);
+    setTempFixedValue(String(config.fixedInterestValue));
     setConfigDialogOpen(true);
   };
 
@@ -122,6 +141,8 @@ const CreditLine: React.FC = () => {
       initialBalance: parseFloat(tempInitialBalance) || 0,
       interestRate: parseFloat(tempInterestRate) || 0,
       interestType: tempInterestType,
+      interestMode: tempInterestMode,
+      fixedInterestValue: parseFloat(tempFixedValue) || 0,
     });
     setConfigDialogOpen(false);
   };
@@ -133,9 +154,22 @@ const CreditLine: React.FC = () => {
   const totalExpenses = items.filter(i => i.type === "expense").reduce((acc, i) => acc + i.value, 0);
   const totalPayments = items.filter(i => i.type === "payment").reduce((acc, i) => acc + i.value, 0);
   const currentBalance = config.initialBalance + totalExpenses - totalPayments;
-  const monthlyInterest = config.interestType === "monthly" 
-    ? (currentBalance * config.interestRate) / 100 
-    : (currentBalance * config.interestRate) / 100 / 12;
+  
+  const calculateMonthlyInterest = () => {
+    const percentageInterest = config.interestType === "monthly" 
+      ? (currentBalance * config.interestRate) / 100 
+      : (currentBalance * config.interestRate) / 100 / 12;
+    
+    if (config.interestMode === "percentage") {
+      return percentageInterest;
+    } else if (config.interestMode === "fixed") {
+      return config.fixedInterestValue;
+    } else {
+      return percentageInterest + config.fixedInterestValue;
+    }
+  };
+  
+  const monthlyInterest = calculateMonthlyInterest();
 
   const formatCurrency = (val: number) =>
     `CAD $${val.toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -293,11 +327,11 @@ const CreditLine: React.FC = () => {
       <Dialog open={configDialogOpen} onOpenChange={setConfigDialogOpen}>
         <DialogContent className="rounded-3xl">
           <DialogHeader>
-            <DialogTitle>Configurar Credit Line</DialogTitle>
+            <DialogTitle className="font-light tracking-wide">Configurar Credit Line</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4 py-2">
+          <div className="flex flex-col gap-5 py-3">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Saldo Inicial (CAD)</label>
+              <label className="text-xs font-light uppercase tracking-wider text-muted-foreground">Saldo Inicial (CAD)</label>
               <Input
                 type="number"
                 placeholder="0.00"
@@ -305,40 +339,80 @@ const CreditLine: React.FC = () => {
                 min={0}
                 step={0.01}
                 onChange={(e) => setTempInitialBalance(e.target.value)}
-                className="rounded-xl"
+                className="rounded-xl font-light"
               />
             </div>
+            
             <div className="space-y-2">
-              <label className="text-sm font-medium">Tipo de Juros</label>
-              <Select value={tempInterestType} onValueChange={(v) => setTempInterestType(v as "monthly" | "annual")}>
-                <SelectTrigger className="rounded-xl">
-                  <SelectValue placeholder="Tipo" />
+              <label className="text-xs font-light uppercase tracking-wider text-muted-foreground">Modo de Cálculo</label>
+              <Select value={tempInterestMode} onValueChange={(v) => setTempInterestMode(v as "percentage" | "fixed" | "both")}>
+                <SelectTrigger className="rounded-xl font-light">
+                  <SelectValue placeholder="Modo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="monthly">Mensal</SelectItem>
-                  <SelectItem value="annual">Anual</SelectItem>
+                  <SelectItem value="percentage">Apenas Porcentagem (%)</SelectItem>
+                  <SelectItem value="fixed">Apenas Valor Fixo (CAD)</SelectItem>
+                  <SelectItem value="both">Ambos (% + CAD)</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Taxa de Juros {tempInterestType === "monthly" ? "Mensal" : "Anual"} (%)
-              </label>
-              <Input
-                type="number"
-                placeholder={tempInterestType === "monthly" ? "1.75" : "21"}
-                value={tempInterestRate}
-                min={0}
-                step={0.1}
-                onChange={(e) => setTempInterestRate(e.target.value)}
-                className="rounded-xl"
-              />
-              <p className="text-xs text-muted-foreground">
-                {tempInterestType === "monthly" 
-                  ? "Taxa mensal aplicada (ex: 1.75%/mês)" 
-                  : "RBC Prime + margem (típico: 19-22%/ano)"}
+              <p className="text-[10px] text-muted-foreground font-light tracking-wide">
+                Escolha como calcular os juros mensais
               </p>
             </div>
+
+            {(tempInterestMode === "percentage" || tempInterestMode === "both") && (
+              <>
+                <div className="space-y-2">
+                  <label className="text-xs font-light uppercase tracking-wider text-muted-foreground">Tipo de Taxa</label>
+                  <Select value={tempInterestType} onValueChange={(v) => setTempInterestType(v as "monthly" | "annual")}>
+                    <SelectTrigger className="rounded-xl font-light">
+                      <SelectValue placeholder="Tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Mensal</SelectItem>
+                      <SelectItem value="annual">Anual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-light uppercase tracking-wider text-muted-foreground">
+                    Taxa {tempInterestType === "monthly" ? "Mensal" : "Anual"} (%)
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder={tempInterestType === "monthly" ? "1.75" : "21"}
+                    value={tempInterestRate}
+                    min={0}
+                    step={0.1}
+                    onChange={(e) => setTempInterestRate(e.target.value)}
+                    className="rounded-xl font-light"
+                  />
+                  <p className="text-[10px] text-muted-foreground font-light tracking-wide">
+                    {tempInterestType === "monthly" 
+                      ? "Taxa mensal aplicada (ex: 1.75%/mês)" 
+                      : "RBC Prime + margem (típico: 19-22%/ano)"}
+                  </p>
+                </div>
+              </>
+            )}
+
+            {(tempInterestMode === "fixed" || tempInterestMode === "both") && (
+              <div className="space-y-2">
+                <label className="text-xs font-light uppercase tracking-wider text-muted-foreground">Valor Fixo Mensal (CAD)</label>
+                <Input
+                  type="number"
+                  placeholder="50.00"
+                  value={tempFixedValue}
+                  min={0}
+                  step={0.01}
+                  onChange={(e) => setTempFixedValue(e.target.value)}
+                  className="rounded-xl font-light"
+                />
+                <p className="text-[10px] text-muted-foreground font-light tracking-wide">
+                  Valor fixo de juros cobrado mensalmente
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <DialogClose asChild>
