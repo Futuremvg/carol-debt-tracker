@@ -417,32 +417,41 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Projeção se não pagar */}
+          {/* Projeção se não pagar - juros acumulam no saldo */}
           {vehicleData.carolBalance > 0 && vehicleData.creditLineInterest > 0 && (
             <div className="mt-4 pt-4 border-t border-white/10">
-              <p className="text-[9px] font-extralight uppercase tracking-wider opacity-60 mb-2">
-                Projeção sem pagamento
+              <p className="text-[9px] font-extralight uppercase tracking-wider opacity-60 mb-3">
+                Se não pagar (juros somam ao saldo dia 10)
               </p>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <p className="text-[9px] opacity-50 mb-1">3 meses</p>
-                  <p className="text-sm font-light">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] opacity-60">Próximo mês</span>
+                  <span className="text-sm font-light">
+                    {formatCurrency(vehicleData.carolBalance + vehicleData.creditLineInterest)}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] opacity-60">Em 3 meses</span>
+                  <span className="text-sm font-light">
                     {formatCurrency(vehicleData.carolBalance + (vehicleData.creditLineInterest * 3))}
-                  </p>
+                  </span>
                 </div>
-                <div>
-                  <p className="text-[9px] opacity-50 mb-1">6 meses</p>
-                  <p className="text-sm font-light">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] opacity-60">Em 6 meses</span>
+                  <span className="text-sm font-light">
                     {formatCurrency(vehicleData.carolBalance + (vehicleData.creditLineInterest * 6))}
-                  </p>
+                  </span>
                 </div>
-                <div>
-                  <p className="text-[9px] opacity-50 mb-1">12 meses</p>
-                  <p className="text-sm font-light">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] opacity-60">Em 12 meses</span>
+                  <span className="text-sm font-light text-destructive/80">
                     {formatCurrency(vehicleData.carolBalance + (vehicleData.creditLineInterest * 12))}
-                  </p>
+                  </span>
                 </div>
               </div>
+              <p className="text-[8px] opacity-40 mt-2 italic">
+                +{formatCurrency(vehicleData.creditLineInterest)} adicionado ao saldo a cada mês
+              </p>
             </div>
           )}
         </motion.div>
