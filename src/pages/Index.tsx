@@ -416,6 +416,35 @@ const Index = () => {
               <span>Juros (fixo): {formatCurrency(vehicleData.creditLineInterest)}/mês</span>
             </div>
           </div>
+          
+          {/* Projeção se não pagar */}
+          {vehicleData.carolBalance > 0 && vehicleData.creditLineInterest > 0 && (
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <p className="text-[9px] font-extralight uppercase tracking-wider opacity-60 mb-2">
+                Projeção sem pagamento
+              </p>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-[9px] opacity-50 mb-1">3 meses</p>
+                  <p className="text-sm font-light">
+                    {formatCurrency(vehicleData.carolBalance + (vehicleData.creditLineInterest * 3))}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[9px] opacity-50 mb-1">6 meses</p>
+                  <p className="text-sm font-light">
+                    {formatCurrency(vehicleData.carolBalance + (vehicleData.creditLineInterest * 6))}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[9px] opacity-50 mb-1">12 meses</p>
+                  <p className="text-sm font-light">
+                    {formatCurrency(vehicleData.carolBalance + (vehicleData.creditLineInterest * 12))}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
 
         {/* Quick Stats */}
