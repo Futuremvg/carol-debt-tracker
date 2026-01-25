@@ -4,8 +4,8 @@ export function calculateMonthlyEquivalentPayment(loan: CarLoan): number {
   if (loan.paymentFrequency === "monthly") {
     return loan.paymentAmount;
   }
-  // Biweekly: 26 payments per year / 12 months
-  return (loan.paymentAmount * 26) / 12;
+  // Biweekly: 2 payments per month (payment already includes interest)
+  return loan.paymentAmount * 2;
 }
 
 export function calculateMonthlyInterest(balance: number, aprPercent: number): number {
