@@ -97,10 +97,11 @@ function getVehicleCarolData() {
       insuranceMonthly, 
       creditLineInterest, 
       totalMonthlyImpact,
-      carBalance: data.carLoan.balance
+      carBalance: data.carLoan.balance,
+      carolBalance: data.carolCreditLine.balance
     };
   } catch {
-    return { carMonthlyPayment: 0, insuranceMonthly: 0, creditLineInterest: 0, totalMonthlyImpact: 0, carBalance: 0 };
+    return { carMonthlyPayment: 0, insuranceMonthly: 0, creditLineInterest: 0, totalMonthlyImpact: 0, carBalance: 0, carolBalance: 0 };
   }
 }
 
@@ -386,7 +387,7 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* Main Balance Card */}
+        {/* Main Balance Card - Carol Credit Line */}
         <motion.div 
           variants={itemVariants}
           className="balance-gradient rounded-2xl p-5 text-primary-foreground shadow-lg"
@@ -394,7 +395,7 @@ const Index = () => {
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
           <div className="flex items-center justify-between mb-5">
-            <span className="text-[10px] font-extralight uppercase tracking-[0.2em] opacity-80">Credit Line · RBC</span>
+            <span className="text-[10px] font-extralight uppercase tracking-[0.2em] opacity-80">Credit Line · Carol</span>
             <motion.div
               animate={{ rotate: [0, 5, -5, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
@@ -409,12 +410,10 @@ const Index = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
             >
-              {formatCurrency(creditData.currentBalance)}
+              {formatCurrency(vehicleData.carolBalance || 0)}
             </motion.span>
             <div className="flex items-center gap-4 text-[10px] font-extralight opacity-70 tracking-wide">
-              <span>Juros: {formatCurrency(creditData.monthlyInterest)}/mês</span>
-              <span className="opacity-50">·</span>
-              <span>{creditData.annualRate.toFixed(1)}% a.a.</span>
+              <span>Juros (fixo): {formatCurrency(vehicleData.creditLineInterest)}/mês</span>
             </div>
           </div>
         </motion.div>
