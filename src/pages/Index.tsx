@@ -201,13 +201,29 @@ const Index = () => {
       setVehicleData(getVehicleCarolData());
     };
     
+    // Refresh immediately on mount
+    refresh();
+    
+    // Refresh on window focus and storage changes
     window.addEventListener("focus", refresh);
     window.addEventListener("storage", refresh);
-    refresh();
+    
+    // Also refresh on visibility change (when tab becomes visible)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    // Periodic refresh every 2 seconds to catch localStorage changes from other components
+    const interval = setInterval(refresh, 2000);
     
     return () => {
       window.removeEventListener("focus", refresh);
       window.removeEventListener("storage", refresh);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearInterval(interval);
     };
   }, []);
 
