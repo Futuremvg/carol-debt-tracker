@@ -64,35 +64,25 @@ const CarLoanResultsCard: React.FC<CarLoanResultsCardProps> = ({ loan, projectio
 
       <div className="grid grid-cols-2 gap-3">
         <div className="p-3 rounded-xl bg-muted/30 space-y-1">
-          <p className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">Pagamento Mensal Equiv.</p>
+          <p className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">Pagamento Mensal</p>
           <p className="text-lg font-light">{formatCurrency(monthlyPayment)}</p>
-        </div>
-
-        <div className="p-3 rounded-xl bg-muted/30 space-y-1">
-          <p className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">Juros Mensal Aprox.</p>
-          <p className="text-lg font-light">{formatCurrency(monthlyInterest)}</p>
-        </div>
-
-        <div className="p-3 rounded-xl bg-muted/30 space-y-1">
-          <p className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">Juros Diário Aprox.</p>
-          <p className="text-lg font-light">{formatCurrency(dailyInterest)}</p>
+          <p className="text-[9px] text-muted-foreground/70">Juros já inclusos</p>
         </div>
 
         <div className="p-3 rounded-xl bg-muted/30 space-y-1">
           <p className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">Tempo Restante Est.</p>
           <p className="text-lg font-light">{formatYearsMonths(projection.estimatedMonthsRemaining)}</p>
         </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="p-3 rounded-xl bg-destructive/5 space-y-1">
-          <p className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">Total Juros Restante</p>
-          <p className="text-lg font-light text-destructive">{formatCurrency(projection.estimatedTotalInterestRemaining)}</p>
+        <div className="p-3 rounded-xl bg-muted/30 space-y-1">
+          <p className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">Saldo Devedor</p>
+          <p className="text-lg font-light">{formatCurrency(loan.balance)}</p>
         </div>
 
         <div className="p-3 rounded-xl bg-accent/5 space-y-1">
           <p className="text-[10px] text-muted-foreground font-light uppercase tracking-wider">Total a Pagar</p>
           <p className="text-lg font-light">{formatCurrency(projection.estimatedTotalPaidRemaining)}</p>
+          <p className="text-[9px] text-muted-foreground/70">= Saldo atual</p>
         </div>
       </div>
 

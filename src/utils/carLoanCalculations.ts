@@ -47,46 +47,33 @@ export function calculatePayoffProjection(
   loan: CarLoan
 ): PayoffProjection {
   const monthlyPayment = calculateMonthlyEquivalentPayment(loan) + loan.extraPaymentMonthly;
-  const monthlyRate = loan.aprPercent / 100 / 12;
-
-  let balance = loan.balance;
-  let totalInterest = 0;
-  let totalPaid = 0;
+  
+  // Since payments already include interest, we calculate simply:
+  // Total months = Balance / Monthly Payment
+  const estimatedMonths = Math.ceil(loan.balance / monthlyPayment);
+  const totalPaid = loan.balance; // No extra interest - it's already in payments
+  
+  // Build simple amortization schedule (no interest calculation - already embedded)
   const schedule: AmortizationEntry[] = [];
-
-  let month = 0;
-  const maxMonths = 360; // 30 years max to prevent infinite loop
-
-  while (balance > 0.01 && month < maxMonths) {
-    month++;
-    const interest = balance * monthlyRate;
-    const regularPayment = calculateMonthlyEquivalentPayment(loan);
-    let payment = regularPayment + loan.extraPaymentMonthly;
-
-    // If payment is greater than balance + interest, adjust
-    if (payment > balance + interest) {
-      payment = balance + interest;
-    }
-
-    const principal = payment - interest;
-    balance = Math.max(0, balance - principal);
-
-    totalInterest += interest;
-    totalPaid += payment;
-
+  let balance = loan.balance;
+  
+  for (let month = 1; month <= estimatedMonths && balance > 0; month++) {
+    const payment = Math.min(monthlyPayment, balance);
+    balance = Math.max(0, balance - payment);
+    
     schedule.push({
       month,
       payment,
-      principal,
-      interest,
+      principal: payment, // All payment goes to principal (interest already included)
+      interest: 0, // Interest already embedded in payment amount
       balance,
       extraPayment: loan.extraPaymentMonthly,
     });
   }
 
   return {
-    estimatedMonthsRemaining: month,
-    estimatedTotalInterestRemaining: totalInterest,
+    estimatedMonthsRemaining: estimatedMonths,
+    estimatedTotalInterestRemaining: 0, // Interest already included in payments
     estimatedTotalPaidRemaining: totalPaid,
     amortizationSchedule: schedule,
   };
