@@ -11,9 +11,10 @@ describe("carLoanCalculations", () => {
   it("converts biweekly payment to monthly equivalent", () => {
     const loan = {
       balance: 10000,
-      apr: 7,
+      aprPercent: 7,
       paymentAmount: 250,
       paymentFrequency: "biweekly" as const,
+      estimatedCarMarketValue: 0,
       extraPaymentMonthly: 0,
     };
 
@@ -28,9 +29,10 @@ describe("carLoanCalculations", () => {
   it("creates payoff projection with extra payment", () => {
     const loan = {
       balance: 1000,
-      apr: 9,
+      aprPercent: 9,
       paymentAmount: 200,
       paymentFrequency: "monthly" as const,
+      estimatedCarMarketValue: 0,
       extraPaymentMonthly: 50,
     };
 
