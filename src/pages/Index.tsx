@@ -9,6 +9,8 @@ interface CreditConfig {
   initialBalance: number;
   interestRate: number;
   interestType: "monthly" | "annual";
+  interestMode: "percentage" | "fixed" | "both";
+  fixedInterestValue: number;
 }
 
 interface CreditItem {
@@ -47,20 +49,35 @@ function getRandomMotivationalMessage() {
 
 function getCreditData() {
   try {
-    const config: CreditConfig = JSON.parse(localStorage.getItem("credit-line-config") || '{"initialBalance":0,"interestRate":21,"interestType":"annual"}');
+    const defaultConfig: CreditConfig = { initialBalance: 0, interestRate: 21, interestType: "annual", interestMode: "percentage", fixedInterestValue: 0 };
+    const config: CreditConfig = { ...defaultConfig, ...JSON.parse(localStorage.getItem("credit-line-config") || "{}") };
     const items: CreditItem[] = JSON.parse(localStorage.getItem("credit-line-items") || "[]");
     
     const totalExpenses = items.filter(i => i.type === "expense").reduce((acc, i) => acc + i.value, 0);
     const totalPayments = items.filter(i => i.type === "payment").reduce((acc, i) => acc + i.value, 0);
     const currentBalance = config.initialBalance + totalExpenses - totalPayments;
-    const monthlyInterest = config.interestType === "monthly" 
+    
+    const percentageInterest = config.interestType === "monthly" 
       ? (currentBalance * config.interestRate) / 100 
       : (currentBalance * config.interestRate) / 100 / 12;
-    const annualRate = config.interestType === "annual" ? config.interestRate : config.interestRate * 12;
     
-    return { currentBalance, monthlyInterest, annualRate };
+    let monthlyInterest: number;
+    if (config.interestMode === "fixed") {
+      monthlyInterest = config.fixedInterestValue;
+    } else if (config.interestMode === "both") {
+      monthlyInterest = percentageInterest + config.fixedInterestValue;
+    } else {
+      monthlyInterest = percentageInterest;
+    }
+    
+    const annualRate = config.interestType === "annual" ? config.interestRate : config.interestRate * 12;
+    const recentTransactions = items
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+    
+    return { currentBalance, monthlyInterest, annualRate, recentTransactions };
   } catch {
-    return { currentBalance: 0, monthlyInterest: 0, annualRate: 0 };
+    return { currentBalance: 0, monthlyInterest: 0, annualRate: 0, recentTransactions: [] as CreditItem[] };
   }
 }
 
@@ -387,7 +404,7 @@ const Index = () => {
           )}
         </AnimatePresence>
 
-        {/* Main Balance Card - Carol Credit Line */}
+        {/* Main Balance Card - Credit Line */}
         <motion.div 
           variants={itemVariants}
           className="balance-gradient rounded-2xl p-5 text-primary-foreground shadow-lg"
@@ -395,7 +412,7 @@ const Index = () => {
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
         >
           <div className="flex items-center justify-between mb-5">
-            <span className="text-[10px] font-extralight uppercase tracking-[0.2em] opacity-80">Credit Line · Carol</span>
+            <span className="text-[10px] font-extralight uppercase tracking-[0.2em] opacity-80">Credit Line · RBC</span>
             <motion.div
               animate={{ rotate: [0, 5, -5, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
@@ -410,48 +427,72 @@ const Index = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
             >
-              {formatCurrency(vehicleData.carolBalance || 0)}
+              {formatCurrency(creditData.currentBalance)}
             </motion.span>
             <div className="flex items-center gap-4 text-[10px] font-extralight opacity-70 tracking-wide">
-              <span>Juros (fixo): {formatCurrency(vehicleData.creditLineInterest)}/mês</span>
+              <span>Juros estimado: {formatCurrency(creditData.monthlyInterest)}/mês</span>
             </div>
           </div>
           
-          {/* Projeção se não pagar - juros acumulam no saldo */}
-          {vehicleData.carolBalance > 0 && vehicleData.creditLineInterest > 0 && (
+          {/* Projeção se não pagar */}
+          {creditData.currentBalance > 0 && creditData.monthlyInterest > 0 && (
             <div className="mt-4 pt-4 border-t border-white/10">
               <p className="text-[9px] font-extralight uppercase tracking-wider opacity-60 mb-3">
-                Se não pagar (juros somam ao saldo dia 10)
+                Se não pagar (juros somam ao saldo)
               </p>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] opacity-60">Próximo mês</span>
                   <span className="text-sm font-light">
-                    {formatCurrency(vehicleData.carolBalance + vehicleData.creditLineInterest)}
+                    {formatCurrency(creditData.currentBalance + creditData.monthlyInterest)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] opacity-60">Em 3 meses</span>
                   <span className="text-sm font-light">
-                    {formatCurrency(vehicleData.carolBalance + (vehicleData.creditLineInterest * 3))}
+                    {formatCurrency(creditData.currentBalance + (creditData.monthlyInterest * 3))}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] opacity-60">Em 6 meses</span>
                   <span className="text-sm font-light">
-                    {formatCurrency(vehicleData.carolBalance + (vehicleData.creditLineInterest * 6))}
+                    {formatCurrency(creditData.currentBalance + (creditData.monthlyInterest * 6))}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] opacity-60">Em 12 meses</span>
                   <span className="text-sm font-light text-destructive/80">
-                    {formatCurrency(vehicleData.carolBalance + (vehicleData.creditLineInterest * 12))}
+                    {formatCurrency(creditData.currentBalance + (creditData.monthlyInterest * 12))}
                   </span>
                 </div>
               </div>
               <p className="text-[8px] opacity-40 mt-2 italic">
-                +{formatCurrency(vehicleData.creditLineInterest)} adicionado ao saldo a cada mês
+                +{formatCurrency(creditData.monthlyInterest)} adicionado ao saldo a cada mês
               </p>
+            </div>
+          )}
+
+          {/* Recent Transactions */}
+          {creditData.recentTransactions.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <p className="text-[9px] font-extralight uppercase tracking-wider opacity-60 mb-3">
+                Últimas Transações
+              </p>
+              <div className="space-y-2">
+                {creditData.recentTransactions.map((tx) => (
+                  <div key={tx.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] ${tx.type === "payment" ? "text-accent" : "opacity-70"}`}>
+                        {tx.type === "payment" ? "▼" : "▲"}
+                      </span>
+                      <span className="text-[10px] opacity-80 truncate max-w-[120px]">{tx.description}</span>
+                    </div>
+                    <span className={`text-xs font-light ${tx.type === "payment" ? "text-accent" : "opacity-80"}`}>
+                      {tx.type === "payment" ? "-" : "+"}{formatCurrency(tx.value)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </motion.div>
